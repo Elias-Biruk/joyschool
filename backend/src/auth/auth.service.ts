@@ -85,8 +85,10 @@ export class AuthService {
   }
 
   async googleAuth(googleTokenDto: GoogleTokenDto) {
-    if (!this.googleClient) {
-      throw new UnauthorizedException('Google authentication not configured');
+    const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+    
+    if (!clientId || !this.googleClient) {
+      throw new UnauthorizedException('Google authentication is not configured. Please use email/password registration.');
     }
 
     try {
