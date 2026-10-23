@@ -70,14 +70,15 @@ export default function GoogleSignIn({ onSuccess, onError }: GoogleSignInProps) 
 
     // @ts-ignore - Google API types
     const google = window.google;
-    
+
     // Use prompt to show the popup
     google.accounts.id.prompt((notification: any) => {
       if (notification.isNotDisplayed()) {
         setLoading(false);
-        onError?.('Google sign-in popup was blocked by browser');
+        onError?.('Google sign-in popup was blocked by browser. Check browser settings for third-party sign-in.');
       }
-      if (notification.isSkipped()) {
+      // isSkipped may not be available in all API versions
+      if (typeof notification.isSkipped === 'function' && notification.isSkipped()) {
         setLoading(false);
       }
     });
