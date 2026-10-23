@@ -11,12 +11,11 @@ async function bootstrap() {
   });
 
   // Enable CORS with secure cookie settings
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   const allowedOrigins = [
-    frontendUrl,
+    'http://localhost:3000',
     'https://joyschool.vercel.app',
     'https://joyschool-vwpd.vercel.app',
-  ].filter(Boolean);
+  ];
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow: boolean) => void) => {
