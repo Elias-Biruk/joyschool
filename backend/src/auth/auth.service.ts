@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
@@ -13,6 +13,7 @@ import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private googleClient: OAuth2Client;
 
   constructor(
@@ -88,24 +89,27 @@ export class AuthService {
     const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
 
     if (!clientId || !this.googleClient || clientId === 'placeholder') {
+      this.logger.warn(`Google OAuth not configured. Client ID: ${clientId ? 'SET' : 'NOT_SET'}, googleClient: ${this.googleClient ? 'INITIALIZED' : 'NOT_INITIALIZED'}`);
       throw new UnauthorizedException('Google authentication is not configured. Please use email/password registration.');
     }
 
     try {
       const ticket = await this.googleClient.verifyIdToken({
         idToken: googleTokenDto.idToken,
-        audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
+        audience: clientId,
       });
 
       const payload = ticket.getPayload();
-      
+
       if (!payload) {
+        this.logger.error('Google token payload is null');
         throw new UnauthorizedException('Invalid Google token');
       }
 
       const { sub, email, email_verified, given_name, family_name, picture } = payload;
 
       if (!email) {
+        this.logger.error('Google token missing email');
         throw new UnauthorizedException('Email is required from Google');
       }
 
@@ -115,6 +119,7 @@ export class AuthService {
       if (user) {
         // Existing Google user - sign them in
         if (!user.isActive) {
+          this.logger.warn(`Google user account suspended: ${user.email}`);
           throw new UnauthorizedException('Account is suspended');
         }
 
@@ -141,6 +146,7 @@ export class AuthService {
       user = await this.usersService.findByEmail(email);
 
       if (user) {
+        this.logger.warn(`Email already registered with password: ${email}`);
         // Email already registered - could implement account linking here
         // For now, require separate account or user to link manually
         throw new ConflictException('An account with this email already exists. Please sign in with your password.');
@@ -177,6 +183,7 @@ export class AuthService {
       if (error instanceof ConflictException || error instanceof UnauthorizedException) {
         throw error;
       }
+      this.logger.error(`Google token validation failed: ${error instanceof Error ? error.message : String(error)}`);
       throw new UnauthorizedException('Invalid Google token');
     }
   }
