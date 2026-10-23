@@ -12,28 +12,21 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     private configService: ConfigService,
     private usersService: UsersService,
   ) {
-    const clientId = configService.get<string>('GOOGLE_CLIENT_ID');
-    const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
-    const callbackURL = configService.get<string>('GOOGLE_CALLBACK_URL');
+    const clientId = configService.get<string>('GOOGLE_CLIENT_ID') || 'placeholder';
+    const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET') || 'placeholder';
+    const callbackURL = configService.get<string>('GOOGLE_CALLBACK_URL') || 'placeholder';
 
-    // Only initialize Google Strategy if credentials are configured
-    if (clientId && clientSecret && callbackURL) {
-      super({
-        clientID: clientId,
-        clientSecret: clientSecret,
-        callbackURL: callbackURL,
-        scope: ['email', 'profile'],
-      });
-      this.logger.log('Google OAuth strategy initialized');
-    } else {
-      // @ts-ignore - Prevent initialization without credentials
-      super({
-        clientID: 'placeholder',
-        clientSecret: 'placeholder',
-        callbackURL: 'placeholder',
-        scope: ['email', 'profile'],
-      });
+    super({
+      clientID: clientId,
+      clientSecret: clientSecret,
+      callbackURL: callbackURL,
+      scope: ['email', 'profile'],
+    });
+
+    if (clientId === 'placeholder' || clientSecret === 'placeholder') {
       this.logger.warn('Google OAuth credentials not configured. Google sign-in will be disabled.');
+    } else {
+      this.logger.log('Google OAuth strategy initialized');
     }
   }
 
@@ -43,6 +36,14 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {
+    // Check if Google OAuth is properly configured
+    const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+    const clientSecret = this.configService.get<string>('GOOGLE_CLIENT_SECRET');
+
+    if (!clientId || !clientSecret || clientId === 'placeholder' || clientSecret === 'placeholder') {
+      return done(new UnauthorizedException('Google OAuth is not configured'), undefined);
+    }
+
     const { id, emails, name, picture } = profile;
 
     if (!emails || emails.length === 0) {
