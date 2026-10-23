@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, firstName: string, lastName: string, password: string) => Promise<void>;
+  register: (email: string, firstName: string, lastName: string, password: string, role: 'STUDENT' | 'TEACHER') => Promise<void>;
   googleAuth: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -43,8 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthTokens(response.accessToken, response.refreshToken);
   };
 
-  const register = async (email: string, firstName: string, lastName: string, password: string) => {
-    const response = await authService.register({ email, firstName, lastName, password });
+  const register = async (email: string, firstName: string, lastName: string, password: string, role: 'STUDENT' | 'TEACHER') => {
+    const response = await authService.register({ email, firstName, lastName, password, role });
     setUser(response.user);
     setAuthTokens(response.accessToken, response.refreshToken);
   };

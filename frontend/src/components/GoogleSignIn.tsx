@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { authService, setAuthTokens } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -12,52 +12,64 @@ interface GoogleSignInProps {
 
 export default function GoogleSignIn({ onSuccess, onError }: GoogleSignInProps) {
   const [loading, setLoading] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const buttonRef = useRef<HTMLDivElement>(null);
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    
-    try {
-      // Load Google Identity Services
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.onload = () => {
-        // @ts-ignore - Google API types
-        const google = window.google;
-        
-        google.accounts.id.initialize({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-          callback: async (response: any) => {
-            try {
-              const authResponse = await authService.googleAuth(response.credential);
-              setAuthTokens(authResponse.accessToken, authResponse.refreshToken);
-              onSuccess?.();
-            } catch (error: any) {
-              onError?.(error.response?.data?.message || 'Google sign-in failed');
-            } finally {
-              setLoading(false);
-            }
-          },
-        });
-
-        google.accounts.id.prompt((notification: any) => {
-          if (notification.isNotDisplayed()) {
+  useEffect(() => {
+    // Load Google Identity Services script on mount
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = () => {
+      setScriptLoaded(true);
+      
+      // @ts-ignore - Google API types
+      const google = window.google;
+      
+      google.accounts.id.initialize({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        callback: async (response: any) => {
+          try {
+            const authResponse = await authService.googleAuth(response.credential);
+            setAuthTokens(authResponse.accessToken, authResponse.refreshToken);
+            onSuccess?.();
+          } catch (error: any) {
+            onError?.(error.response?.data?.message || 'Google sign-in failed');
+          } finally {
             setLoading(false);
-            onError?.('Google sign-in popup was blocked');
           }
-        });
-      };
-      
-      script.onerror = () => {
-        setLoading(false);
-        onError?.('Failed to load Google sign-in');
-      };
-      
-      document.head.appendChild(script);
-    } catch (error) {
-      setLoading(false);
-      onError?.('Failed to initialize Google sign-in');
+        },
+      });
+    };
+    
+    script.onerror = () => {
+      onError?.('Failed to load Google sign-in');
+    };
+    
+    document.head.appendChild(script);
+  }, [onError, onSuccess]);
+
+  const handleGoogleSignIn = () => {
+    if (!scriptLoaded) {
+      onError?.('Google sign-in not ready');
+      return;
     }
+
+    setLoading(true);
+
+    // @ts-ignore - Google API types
+    const google = window.google;
+    
+    // Use prompt to show the popup
+    google.accounts.id.prompt((notification: any) => {
+      if (notification.isNotDisplayed()) {
+        setLoading(false);
+        onError?.('Google sign-in popup was blocked by browser');
+      }
+      if (notification.isSkipped()) {
+        setLoading(false);
+      }
+    });
   };
 
   return (
@@ -66,7 +78,7 @@ export default function GoogleSignIn({ onSuccess, onError }: GoogleSignInProps) 
       variant="outline"
       className="w-full"
       onClick={handleGoogleSignIn}
-      disabled={loading}
+      disabled={loading || !scriptLoaded}
     >
       {loading ? (
         <>

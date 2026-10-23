@@ -69,8 +69,7 @@ export class RegisterDto {
   @MaxLength(50, { message: 'Last name must not exceed 50 characters' })
   lastName: string;
 
-  @IsOptional()
   @IsString()
-  @IsIn(['STUDENT', 'TEACHER', 'ADMIN'], { message: 'Invalid role selected' })
-  role?: string;
+  @IsIn(['STUDENT', 'TEACHER'], { message: 'Invalid role selected' })
+  role: string;
 }
