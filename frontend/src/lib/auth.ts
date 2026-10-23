@@ -8,6 +8,8 @@ export interface User {
   role: 'STUDENT' | 'TEACHER' | 'ADMIN';
   avatar?: string;
   bio?: string;
+  emailVerified?: boolean;
+  onboardingCompleted?: boolean;
 }
 
 export interface AuthResponse {
@@ -35,8 +37,12 @@ export const authService = {
     return response.data;
   },
 
+  async googleAuth(idToken: string): Promise<AuthResponse> {
+    const response = await api.post('/v1/auth/google', { idToken });
+    return response.data;
+  },
+
   async logout(): Promise<void> {
-    await api.post('/v1/auth/logout');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
   },
@@ -46,12 +52,24 @@ export const authService = {
     return response.data;
   },
 
-  async forgotPassword(email: string): Promise<void> {
-    await api.post('/v1/auth/forgot-password', { email });
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const response = await api.post('/v1/auth/verify-email', { token });
+    return response.data;
   },
 
-  async resetPassword(token: string, newPassword: string): Promise<void> {
-    await api.post('/v1/auth/reset-password', { token, newPassword });
+  async resendVerificationEmail(email: string): Promise<{ message: string }> {
+    const response = await api.post('/v1/auth/resend-verification', { email });
+    return response.data;
+  },
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await api.post('/v1/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    const response = await api.post('/v1/auth/reset-password', { token, newPassword });
+    return response.data;
   },
 };
 

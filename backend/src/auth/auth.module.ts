@@ -7,13 +7,16 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { FailedLoginTrackerService } from './failed-login-tracker.service';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     UsersModule,
     PrismaModule,
     PassportModule,
+    EmailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -26,7 +29,7 @@ import { FailedLoginTrackerService } from './failed-login-tracker.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, FailedLoginTrackerService],
+  providers: [AuthService, JwtStrategy, GoogleStrategy, FailedLoginTrackerService],
   exports: [AuthService],
 })
 export class AuthModule {}

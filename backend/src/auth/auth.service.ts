@@ -5,19 +5,37 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
+import { GoogleTokenDto } from './dto/google-auth.dto';
+import { EmailService } from '../email/email.service';
+import { OAuth2Client } from 'google-auth-library';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
+  private googleClient: OAuth2Client;
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+    private emailService: EmailService,
+  ) {
+    const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+    if (clientId) {
+      this.googleClient = new OAuth2Client(clientId);
+    }
+  }
 
   async register(registerDto: RegisterDto) {
     const user = await this.usersService.create(registerDto);
+    
+    // Send verification email
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 86400000); // 24 hours
+    await this.usersService.setEmailVerificationToken(user.id, token, expires);
+    await this.emailService.sendVerificationEmail(user.email, token);
+
     const tokens = await this.generateTokens(user);
     return {
       user,
@@ -30,6 +48,10 @@ export class AuthService {
     
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('Please use Google sign-in for this account');
     }
 
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.passwordHash);
@@ -55,9 +77,138 @@ export class AuthService {
         role: user.role,
         avatar: user.avatar,
         bio: user.bio,
+        emailVerified: user.emailVerified,
+        onboardingCompleted: user.onboardingCompleted,
       },
       ...tokens,
     };
+  }
+
+  async googleAuth(googleTokenDto: GoogleTokenDto) {
+    if (!this.googleClient) {
+      throw new UnauthorizedException('Google authentication not configured');
+    }
+
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: googleTokenDto.idToken,
+        audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
+      });
+
+      const payload = ticket.getPayload();
+      
+      if (!payload) {
+        throw new UnauthorizedException('Invalid Google token');
+      }
+
+      const { sub, email, email_verified, given_name, family_name, picture } = payload;
+
+      if (!email) {
+        throw new UnauthorizedException('Email is required from Google');
+      }
+
+      // Check if user exists with this Google identity
+      let user = await this.usersService.findByProvider('google', sub);
+
+      if (user) {
+        // Existing Google user - sign them in
+        if (!user.isActive) {
+          throw new UnauthorizedException('Account is suspended');
+        }
+
+        await this.usersService.updateLastLogin(user.id);
+        const tokens = await this.generateTokens(user);
+
+        return {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            avatar: user.avatar,
+            bio: user.bio,
+            emailVerified: user.emailVerified,
+            onboardingCompleted: user.onboardingCompleted,
+          },
+          ...tokens,
+        };
+      }
+
+      // Check if user exists with this email (potential account linking)
+      user = await this.usersService.findByEmail(email);
+
+      if (user) {
+        // Email already registered - could implement account linking here
+        // For now, require separate account or user to link manually
+        throw new ConflictException('An account with this email already exists. Please sign in with your password.');
+      }
+
+      // Create new user from Google
+      const newUser = await this.usersService.createWithGoogle({
+        email,
+        firstName: given_name || '',
+        lastName: family_name || '',
+        provider: 'google',
+        providerId: sub,
+        avatar: picture,
+        emailVerified: email_verified || false,
+      });
+
+      const tokens = await this.generateTokens(newUser);
+
+      return {
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          role: newUser.role,
+          avatar: newUser.avatar,
+          bio: newUser.bio,
+          emailVerified: newUser.emailVerified,
+          onboardingCompleted: newUser.onboardingCompleted,
+        },
+        ...tokens,
+      };
+    } catch (error) {
+      if (error instanceof ConflictException || error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid Google token');
+    }
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.usersService.findByEmailVerificationToken(token);
+    
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired verification token');
+    }
+
+    await this.usersService.verifyEmail(user.id);
+    
+    return { message: 'Email verified successfully' };
+  }
+
+  async resendVerificationEmail(email: string) {
+    const user = await this.usersService.findByEmail(email);
+    
+    if (!user) {
+      // Don't reveal if email exists
+      return { message: 'If the email exists, a verification link has been sent' };
+    }
+
+    if (user.emailVerified) {
+      return { message: 'Email is already verified' };
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 86400000); // 24 hours
+    await this.usersService.setEmailVerificationToken(user.id, token, expires);
+    await this.emailService.sendVerificationEmail(user.email, token);
+    
+    return { message: 'If the email exists, a verification link has been sent' };
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
@@ -68,13 +219,16 @@ export class AuthService {
       return { message: 'If the email exists, a reset link has been sent' };
     }
 
+    if (!user.passwordHash) {
+      // Google account - cannot reset password
+      return { message: 'If the email exists, a reset link has been sent' };
+    }
+
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 3600000); // 1 hour
 
     await this.usersService.setPasswordResetToken(user.id, token, expires);
-
-    // In production, send email with reset link
-    console.log(`Password reset token for ${user.email}: ${token}`);
+    await this.emailService.sendPasswordResetEmail(user.email, token);
     
     return { message: 'If the email exists, a reset link has been sent' };
   }

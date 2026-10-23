@@ -1,10 +1,11 @@
-import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Query } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { RequestWithUser } from '../common/interfaces/request.interface';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
+import { GoogleTokenDto } from './dto/google-auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('v1/auth')
@@ -23,10 +24,28 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @Post('google')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async googleAuth(@Body() googleTokenDto: GoogleTokenDto) {
+    return this.authService.googleAuth(googleTokenDto);
+  }
+
   @Post('refresh')
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   async refresh(@Body('refreshToken') refreshToken: string) {
     return this.authService.refreshToken(refreshToken);
+  }
+
+  @Post('verify-email')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async verifyEmail(@Body('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  @Post('resend-verification')
+  @Throttle({ default: { limit: 3, ttl: 3600000 } })
+  async resendVerificationEmail(@Body('email') email: string) {
+    return this.authService.resendVerificationEmail(email);
   }
 
   @Post('forgot-password')

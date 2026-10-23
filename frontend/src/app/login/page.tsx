@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import GoogleSignIn from '@/components/GoogleSignIn';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -32,6 +33,14 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleSuccess = () => {
+    router.push('/dashboard');
+  };
+
+  const handleGoogleError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
@@ -46,6 +55,18 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
+            
+            <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">Or continue with email</span>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

@@ -77,7 +77,7 @@ enum AuditAction {
 model User {
   id                String    @id @default(cuid())
   email             String    @unique
-  passwordHash      String
+  passwordHash      String?
   firstName         String
   lastName          String
   role              Role      @default(STUDENT)
@@ -88,6 +88,11 @@ model User {
   lastLoginAt       DateTime?
   passwordResetToken String?
   passwordResetExpires DateTime?
+  emailVerificationToken String?
+  emailVerificationExpires DateTime?
+  provider          String?   // 'google', 'email', etc.
+  providerId        String?   // Google sub claim or other external ID
+  onboardingCompleted Boolean @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -107,6 +112,7 @@ model User {
   @@index([email])
   @@index([role])
   @@index([isActive])
+  @@index([provider, providerId])
 }
 
 model CourseCategory {

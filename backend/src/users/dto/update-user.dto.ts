@@ -1,9 +1,24 @@
-import { PartialType, OmitType } from '@nestjs/mapped-types';
-import { RegisterDto } from '../../auth/dto/register.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsOptional } from 'class-validator';
 
-export class UpdateUserDto extends PartialType(
-  OmitType(RegisterDto, ['password'] as const)
-) {
+export class UpdateUserDto {
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  lastName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
   bio?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
   avatar?: string;
 }
