@@ -113,6 +113,12 @@ export class AuthService {
         throw new UnauthorizedException('Email is required from Google');
       }
 
+      // Require verified Google email addresses
+      if (email_verified !== true) {
+        this.logger.warn(`Google email not verified: ${email}, email_verified: ${email_verified}`);
+        throw new UnauthorizedException('Google email must be verified. Please verify your email with Google and try again.');
+      }
+
       // Check if user exists with this Google identity
       let user = await this.usersService.findByProvider('google', sub);
 

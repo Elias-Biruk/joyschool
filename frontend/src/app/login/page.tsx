@@ -26,6 +26,8 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
+      // Small delay to ensure auth state is propagated before redirect
+      await new Promise(resolve => setTimeout(resolve, 100));
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
@@ -34,7 +36,9 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSuccess = () => {
+  const handleGoogleSuccess = async () => {
+    // Small delay to ensure auth state is propagated before redirect
+    await new Promise(resolve => setTimeout(resolve, 100));
     router.push('/dashboard');
   };
 

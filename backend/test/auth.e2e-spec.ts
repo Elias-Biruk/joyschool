@@ -29,7 +29,7 @@ describe('AuthController (e2e)', () => {
   it('/auth/register (POST)', () => {
     const uniqueEmail = `test${Date.now()}@example.com`;
     return request.default(app.getHttpServer())
-      .post('/api/auth/register')
+      .post('/api/v1/auth/register')
       .send({
         email: uniqueEmail,
         password: 'Test123456@',

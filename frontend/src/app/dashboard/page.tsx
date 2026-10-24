@@ -9,12 +9,23 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    // Don't redirect while loading to prevent race conditions
+    if (loading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
       router.push('/login');
       return;
     }
 
-    if (!loading && isAuthenticated && user) {
+    if (isAuthenticated && user) {
+      // Check if onboarding is required
+      if (!user.onboardingCompleted) {
+        router.push('/onboarding');
+        return;
+      }
+
       // Redirect based on role
       if (user.role === 'STUDENT') {
         router.push('/dashboard/student');

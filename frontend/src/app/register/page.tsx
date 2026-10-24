@@ -42,6 +42,8 @@ export default function RegisterPage() {
 
     try {
       await register(email, firstName, lastName, password, role);
+      // Small delay to ensure auth state is propagated before redirect
+      await new Promise(resolve => setTimeout(resolve, 100));
       router.push('/onboarding');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -50,7 +52,9 @@ export default function RegisterPage() {
     }
   };
 
-  const handleGoogleSuccess = () => {
+  const handleGoogleSuccess = async () => {
+    // Small delay to ensure auth state is propagated before redirect
+    await new Promise(resolve => setTimeout(resolve, 100));
     router.push('/onboarding');
   };
 

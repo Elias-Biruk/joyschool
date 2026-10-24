@@ -38,11 +38,14 @@ export default function OnboardingPage() {
         throw new Error(data.message || 'Failed to complete onboarding');
       }
 
+      // Small delay to ensure auth state is propagated before redirect
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Redirect to appropriate dashboard
       if (role === 'TEACHER') {
-        router.push('/teacher');
+        router.push('/dashboard/teacher');
       } else {
-        router.push('/dashboard');
+        router.push('/dashboard/student');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to complete onboarding');
