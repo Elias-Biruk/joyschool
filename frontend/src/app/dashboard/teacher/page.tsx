@@ -37,10 +37,12 @@ export default function TeacherDashboard() {
     setError(null);
     try {
       const coursesData = await teacherService.getMyCourses();
-      setCourses(coursesData);
+      // Ensure coursesData is always an array
+      setCourses(Array.isArray(coursesData) ? coursesData : []);
     } catch (err: any) {
       console.error('Failed to load teacher data:', err);
       setError('Failed to load your courses. Please try again.');
+      setCourses([]); // Set empty array on error
     } finally {
       setLoading(false);
     }

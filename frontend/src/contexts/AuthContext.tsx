@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { User, authService, setAuthTokens, clearAuthTokens, getAccessToken } from '@/lib/auth';
 
 interface AuthContextType {
@@ -22,14 +22,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = async () => {
     try {
       const token = getAccessToken();
-      console.log('[AuthContext] checkAuth: token exists:', !!token);
       if (token) {
         const currentUser = await authService.getCurrentUser();
-        console.log('[AuthContext] checkAuth: user retrieved, role:', currentUser?.role, 'onboardingCompleted:', currentUser?.onboardingCompleted);
         setUser(currentUser);
       }
     } catch (error) {
-      console.error('[AuthContext] checkAuth: error retrieving user, clearing tokens');
       clearAuthTokens();
     } finally {
       setLoading(false);
@@ -42,21 +39,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const response = await authService.login({ email, password });
-    console.log('[AuthContext] login: user set, role:', response.user?.role, 'onboardingCompleted:', response.user?.onboardingCompleted);
     setUser(response.user);
     setAuthTokens(response.accessToken, response.refreshToken);
   };
 
   const register = async (email: string, firstName: string, lastName: string, password: string, role: 'STUDENT' | 'TEACHER') => {
     const response = await authService.register({ email, firstName, lastName, password, role });
-    console.log('[AuthContext] register: user set, role:', response.user?.role, 'onboardingCompleted:', response.user?.onboardingCompleted);
     setUser(response.user);
     setAuthTokens(response.accessToken, response.refreshToken);
   };
 
   const googleAuth = async (idToken: string) => {
     const response = await authService.googleAuth(idToken);
-    console.log('[AuthContext] googleAuth: user set, role:', response.user?.role, 'onboardingCompleted:', response.user?.onboardingCompleted);
     setUser(response.user);
     setAuthTokens(response.accessToken, response.refreshToken);
   };

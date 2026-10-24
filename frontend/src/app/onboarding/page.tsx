@@ -38,7 +38,6 @@ export default function OnboardingPage() {
         throw new Error(data.message || 'Failed to complete onboarding');
       }
 
-      console.log('[OnboardingPage] Onboarding completed, redirecting to dashboard');
       // Redirect to appropriate dashboard
       if (role === 'TEACHER') {
         router.push('/dashboard/teacher');

@@ -26,7 +26,6 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      console.log('[LoginPage] Email/password login successful, redirecting to dashboard');
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
@@ -36,7 +35,6 @@ export default function LoginPage() {
   };
 
   const handleGoogleSuccess = () => {
-    console.log('[LoginPage] Google auth successful, redirecting to dashboard');
     router.push('/dashboard');
   };
 

@@ -42,7 +42,6 @@ export default function RegisterPage() {
 
     try {
       await register(email, firstName, lastName, password, role);
-      console.log('[RegisterPage] Registration successful, redirecting to onboarding');
       router.push('/onboarding');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -52,7 +51,6 @@ export default function RegisterPage() {
   };
 
   const handleGoogleSuccess = () => {
-    console.log('[RegisterPage] Google auth successful, redirecting to onboarding');
     router.push('/onboarding');
   };
 
