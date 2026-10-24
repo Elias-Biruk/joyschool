@@ -40,14 +40,21 @@ export default function GoogleSignIn({ onSuccess, onError }: GoogleSignInProps) 
       google.accounts.id.initialize({
         client_id: clientId,
         callback: async (response: any) => {
+          console.log('Google callback triggered, response:', response ? 'Credential received' : 'No response');
           try {
             setLoading(true);
+            console.log('Sending Google credential to backend...');
             const authResponse = await authService.googleAuth(response.credential);
+            console.log('Google auth successful');
             setAuthTokens(authResponse.accessToken, authResponse.refreshToken);
             onSuccess?.();
           } catch (error: any) {
-            onError?.(error.response?.data?.message || 'Google sign-in failed');
+            console.error('Google auth error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Google sign-in failed';
+            console.error('Error message to display:', errorMessage);
+            onError?.(errorMessage);
           } finally {
+            console.log('Setting loading to false');
             setLoading(false);
           }
         },
@@ -66,6 +73,7 @@ export default function GoogleSignIn({ onSuccess, onError }: GoogleSignInProps) 
     };
 
     script.onerror = () => {
+      console.error('Failed to load Google Identity Services script');
       onError?.('Failed to load Google sign-in');
     };
 

@@ -29,6 +29,7 @@ api.interceptors.response.use(
 
     // Only attempt refresh if it's not an auth endpoint and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
+      console.log('Attempting token refresh for:', originalRequest.url);
       originalRequest._retry = true;
 
       try {
@@ -44,6 +45,7 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         window.location.href = '/login';

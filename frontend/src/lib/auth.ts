@@ -39,7 +39,9 @@ export const authService = {
   },
 
   async googleAuth(idToken: string): Promise<AuthResponse> {
+    console.log('authService.googleAuth called with idToken length:', idToken?.length);
     const response = await api.post('/v1/auth/google', { idToken });
+    console.log('authService.googleAuth response status:', response.status);
     return response.data;
   },
 
