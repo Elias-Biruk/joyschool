@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, googleAuth } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,8 +26,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      // Small delay to ensure auth state is propagated before redirect
-      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('[LoginPage] Email/password login successful, redirecting to dashboard');
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
@@ -36,9 +35,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSuccess = async () => {
-    // Small delay to ensure auth state is propagated before redirect
-    await new Promise(resolve => setTimeout(resolve, 100));
+  const handleGoogleSuccess = () => {
+    console.log('[LoginPage] Google auth successful, redirecting to dashboard');
     router.push('/dashboard');
   };
 
@@ -103,7 +101,7 @@ export default function LoginPage() {
                 </div>
               )}
               
-              <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+              <GoogleSignIn onGoogleAuth={googleAuth} onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
               
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">

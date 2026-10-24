@@ -38,9 +38,7 @@ export default function OnboardingPage() {
         throw new Error(data.message || 'Failed to complete onboarding');
       }
 
-      // Small delay to ensure auth state is propagated before redirect
-      await new Promise(resolve => setTimeout(resolve, 100));
-
+      console.log('[OnboardingPage] Onboarding completed, redirecting to dashboard');
       // Redirect to appropriate dashboard
       if (role === 'TEACHER') {
         router.push('/dashboard/teacher');

@@ -47,7 +47,9 @@ api.interceptors.response.use(
 
     // Only attempt refresh if it's not an auth endpoint and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
+      console.log('[API] 401 detected, attempting token refresh for:', originalRequest.url);
       if (isRefreshing) {
+        console.log('[API] Refresh already in progress, queuing request');
         // If already refreshing, add this request to the queue
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -68,6 +70,7 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem('refreshToken');
+        console.log('[API] Calling refresh endpoint, has refresh token:', !!refreshToken);
         const response = await axios.post(`${API_URL}/v1/auth/refresh`, {
           refreshToken,
         });
@@ -75,13 +78,14 @@ api.interceptors.response.use(
         const { accessToken, refreshToken: newRefreshToken } = response.data;
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', newRefreshToken);
+        console.log('[API] Token refresh successful');
 
         processQueue(null, accessToken);
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        console.error('Token refresh failed:', refreshError);
+        console.error('[API] Token refresh failed:', refreshError);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         // Use window.location.href for immediate redirect to clear any React state

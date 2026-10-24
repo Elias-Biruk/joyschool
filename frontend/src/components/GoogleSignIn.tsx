@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { authService, setAuthTokens } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
 interface GoogleSignInProps {
+  onGoogleAuth: (idToken: string) => Promise<void>;
   onSuccess?: () => void;
   onError?: (error: string) => void;
 }
 
-export default function GoogleSignIn({ onSuccess, onError }: GoogleSignInProps) {
+export default function GoogleSignIn({ onGoogleAuth, onSuccess, onError }: GoogleSignInProps) {
   const [loading, setLoading] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [googleConfigured, setGoogleConfigured] = useState(false);
@@ -40,21 +40,20 @@ export default function GoogleSignIn({ onSuccess, onError }: GoogleSignInProps) 
       google.accounts.id.initialize({
         client_id: clientId,
         callback: async (response: any) => {
-          console.log('Google callback triggered, response:', response ? 'Credential received' : 'No response');
+          console.log('[GoogleSignIn] Callback triggered, response:', response ? 'Credential received' : 'No response');
           try {
             setLoading(true);
-            console.log('Sending Google credential to backend...');
-            const authResponse = await authService.googleAuth(response.credential);
-            console.log('Google auth successful');
-            setAuthTokens(authResponse.accessToken, authResponse.refreshToken);
+            console.log('[GoogleSignIn] Calling onGoogleAuth with credential');
+            await onGoogleAuth(response.credential);
+            console.log('[GoogleSignIn] Authentication successful, calling onSuccess');
             onSuccess?.();
           } catch (error: any) {
-            console.error('Google auth error:', error);
+            console.error('[GoogleSignIn] Authentication error:', error);
             const errorMessage = error.response?.data?.message || error.message || 'Google sign-in failed';
-            console.error('Error message to display:', errorMessage);
+            console.error('[GoogleSignIn] Error message:', errorMessage);
             onError?.(errorMessage);
           } finally {
-            console.log('Setting loading to false');
+            console.log('[GoogleSignIn] Setting loading to false');
             setLoading(false);
           }
         },
@@ -73,12 +72,12 @@ export default function GoogleSignIn({ onSuccess, onError }: GoogleSignInProps) 
     };
 
     script.onerror = () => {
-      console.error('Failed to load Google Identity Services script');
+      console.error('[GoogleSignIn] Failed to load Google Identity Services script');
       onError?.('Failed to load Google sign-in');
     };
 
     document.head.appendChild(script);
-  }, [onError, onSuccess]);
+  }, [onError, onSuccess, onGoogleAuth]);
 
   if (!googleConfigured) {
     return (

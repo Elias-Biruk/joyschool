@@ -21,7 +21,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState<'STUDENT' | 'TEACHER'>('STUDENT');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, googleAuth } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,8 +42,7 @@ export default function RegisterPage() {
 
     try {
       await register(email, firstName, lastName, password, role);
-      // Small delay to ensure auth state is propagated before redirect
-      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('[RegisterPage] Registration successful, redirecting to onboarding');
       router.push('/onboarding');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -52,9 +51,8 @@ export default function RegisterPage() {
     }
   };
 
-  const handleGoogleSuccess = async () => {
-    // Small delay to ensure auth state is propagated before redirect
-    await new Promise(resolve => setTimeout(resolve, 100));
+  const handleGoogleSuccess = () => {
+    console.log('[RegisterPage] Google auth successful, redirecting to onboarding');
     router.push('/onboarding');
   };
 
@@ -119,7 +117,7 @@ export default function RegisterPage() {
                 </div>
               )}
               
-              <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+              <GoogleSignIn onGoogleAuth={googleAuth} onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
               
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
