@@ -11,6 +11,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { CoursesModule } from './courses/courses.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { LessonsModule } from './lessons/lessons.module';
+import { ModulesModule } from './modules/modules.module';
 import { ProgressModule } from './progress/progress.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 import { AssignmentsModule } from './assignments/assignments.module';
@@ -47,6 +48,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     CoursesModule,
     EnrollmentsModule,
     LessonsModule,
+    ModulesModule,
     ProgressModule,
     QuizzesModule,
     AssignmentsModule,

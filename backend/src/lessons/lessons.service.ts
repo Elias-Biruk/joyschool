@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { ReorderLessonDto } from './dto/reorder-lesson.dto';
 
 @Injectable()
 export class LessonsService {
@@ -125,5 +126,47 @@ export class LessonsService {
     });
 
     return { message: 'Lesson deleted successfully' };
+  }
+
+  async reorder(reorderLessonDto: ReorderLessonDto, teacherId: string, userRole: string) {
+    const { lessonIds } = reorderLessonDto;
+
+    // Verify all lessons exist and belong to the same module owned by the teacher
+    const lessons = await this.prisma.lesson.findMany({
+      where: { id: { in: lessonIds } },
+      include: {
+        module: {
+          include: { course: true },
+        },
+      },
+    });
+
+    if (lessons.length !== lessonIds.length) {
+      throw new NotFoundException('One or more lessons not found');
+    }
+
+    // Verify all lessons belong to the same module
+    const moduleId = lessons[0].moduleId;
+    const hasDifferentModule = lessons.some((l) => l.moduleId !== moduleId);
+    if (hasDifferentModule) {
+      throw new ForbiddenException('All lessons must belong to the same module');
+    }
+
+    // Verify ownership
+    if (lessons[0].module.course.teacherId !== teacherId && userRole !== 'ADMIN') {
+      throw new ForbiddenException('Not authorized to reorder lessons in this module');
+    }
+
+    // Update order for all lessons in a transaction
+    await this.prisma.$transaction(
+      lessonIds.map((lessonId, index) =>
+        this.prisma.lesson.update({
+          where: { id: lessonId },
+          data: { order: index },
+        }),
+      ),
+    );
+
+    return { message: 'Lessons reordered successfully' };
   }
 }

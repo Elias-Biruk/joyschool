@@ -206,7 +206,7 @@ export default function TeacherDashboard() {
                     </div>
                     <div className="flex gap-2">
                       <Link href={`/courses/${course.slug}/edit`} className="flex-1">
-                        <Button variant="outline" className="w-full">Edit</Button>
+                        <Button variant="outline" className="w-full">Edit Course</Button>
                       </Link>
                       <Button
                         variant="outline"
@@ -240,7 +240,7 @@ export default function TeacherDashboard() {
                   <CardContent>
                     <div className="flex gap-2">
                       <Link href={`/courses/${course.slug}/edit`} className="flex-1">
-                        <Button variant="outline" className="w-full">Edit</Button>
+                        <Button variant="outline" className="w-full">Edit Course</Button>
                       </Link>
                       <Button
                         variant="default"

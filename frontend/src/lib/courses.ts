@@ -47,6 +47,15 @@ export interface CourseModule {
 export interface Lesson {
   id: string;
   title: string;
+  slug: string;
+  content: string;
+  type: 'TEXT' | 'VIDEO' | 'CODE' | 'RESOURCE';
+  videoUrl?: string;
+  durationMinutes?: number;
+  codeExample?: string;
+  resources?: any;
+  isRequired: boolean;
+  moduleId: string;
   order: number;
 }
 
@@ -92,5 +101,69 @@ export const coursesService = {
   async getMyEnrollments(): Promise<any[]> {
     const response = await api.get('/v1/enrollments/my-enrollments');
     return response.data;
+  },
+
+  async createCourse(courseData: any): Promise<Course> {
+    const response = await api.post('/v1/courses', courseData);
+    return response.data;
+  },
+
+  async updateCourse(id: string, courseData: any): Promise<Course> {
+    const response = await api.put(`/v1/courses/${id}`, courseData);
+    return response.data;
+  },
+
+  async deleteCourse(id: string): Promise<void> {
+    await api.delete(`/v1/courses/${id}`);
+  },
+
+  async publishCourse(id: string): Promise<Course> {
+    const response = await api.post(`/v1/courses/${id}/publish`);
+    return response.data;
+  },
+
+  async unpublishCourse(id: string): Promise<Course> {
+    const response = await api.post(`/v1/courses/${id}/unpublish`);
+    return response.data;
+  },
+};
+
+export const modulesService = {
+  async createModule(moduleData: any): Promise<CourseModule> {
+    const response = await api.post('/v1/modules', moduleData);
+    return response.data;
+  },
+
+  async updateModule(id: string, moduleData: any): Promise<CourseModule> {
+    const response = await api.put(`/v1/modules/${id}`, moduleData);
+    return response.data;
+  },
+
+  async deleteModule(id: string): Promise<void> {
+    await api.delete(`/v1/modules/${id}`);
+  },
+
+  async reorderModules(moduleIds: string[]): Promise<void> {
+    await api.post('/v1/modules/reorder', { moduleIds });
+  },
+};
+
+export const lessonsService = {
+  async createLesson(lessonData: any): Promise<Lesson> {
+    const response = await api.post('/v1/lessons', lessonData);
+    return response.data;
+  },
+
+  async updateLesson(id: string, lessonData: any): Promise<Lesson> {
+    const response = await api.put(`/v1/lessons/${id}`, lessonData);
+    return response.data;
+  },
+
+  async deleteLesson(id: string): Promise<void> {
+    await api.delete(`/v1/lessons/${id}`);
+  },
+
+  async reorderLessons(lessonIds: string[]): Promise<void> {
+    await api.post('/v1/lessons/reorder', { lessonIds });
   },
 };
