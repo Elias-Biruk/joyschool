@@ -7,7 +7,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 
-@Controller('api/v1/categories')
+@Controller('v1/categories')
 export class CategoriesController {
   constructor(private categoriesService: CategoriesService) {}
 
